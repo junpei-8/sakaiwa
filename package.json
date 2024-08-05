@@ -1,0 +1,31 @@
+{
+  "name": "nagoya-hackathon-2024",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro check && astro build",
+    "preview": "wrangler pages dev ./dist",
+    "deploy": "wrangler pages deploy ./dist",
+    "astro": "astro",
+    "wrangler": "wrangler"
+  },
+  "dependencies": {
+    "@astrojs/check": "^0.9.1",
+    "@astrojs/cloudflare": "^11.0.1",
+    "@fontsource-variable/noto-sans-jp": "^5.0.19",
+    "@hono/typebox-validator": "^0.2.4",
+    "@sinclair/typebox": "^0.32.35",
+    "@swup/astro": "^1.4.1",
+    "astro": "^4.13.1",
+    "hono": "^4.5.3",
+    "swup": "^4.7.0",
+    "typescript": "^5.5.4",
+    "wrangler": "^3.68.0"
+  },
+  "devDependencies": {
+    "prettier": "^3.3.3",
+    "prettier-plugin-astro": "^0.14.1"
+  }
+}

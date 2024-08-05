@@ -1,0 +1,324 @@
+---
+import Layout from '@/layouts/Layout.astro';
+import { faceImageMap } from './_/face-image';
+---
+
+<script>
+  import type { ServerSchema } from '@/middleware';
+  import { server } from '@/utils/server';
+  import { faceImageMap } from './_/face-image';
+
+  const mainElement = document.getElementById('layout-main') as HTMLDivElement;
+
+  const faceImageElement = document.getElementById('face') as HTMLImageElement;
+
+  const chatsElement = document.getElementById('chats') as HTMLDivElement;
+
+  const chatFormElement = document.getElementById(
+    'chat-form',
+  ) as HTMLFormElement;
+  const chatInputElemenet = chatFormElement['chat'] as HTMLInputElement;
+
+  const chats: ServerSchema['/api/chat']['$post']['input']['json']['messages'] =
+    [];
+
+  chatFormElement.addEventListener('submit', async (event) => {
+    // Submit のリロード動作をキャンセル
+    event.preventDefault();
+
+    // フォームから focus を外す
+    chatInputElemenet.blur();
+
+    // リクエスト中は何もしない
+    if (mainElement.classList.contains('requesting')) {
+      return;
+    }
+
+    // リクエスト中は requesting クラスを追加
+    mainElement.classList.add('requesting');
+
+    // フォームの値を取得
+    const chat = chatInputElemenet.value;
+
+    // フォームをクリア
+    chatInputElemenet.value = '';
+
+    // チャットを保存
+    chats.push({
+      role: 'user',
+      content: chat,
+    });
+
+    // チャットを表示
+    chatsElement.insertAdjacentHTML(
+      'beforeend',
+      /*html*/ `<div class="chat">${chat}</div>`,
+    );
+
+    // チャットをスクロール
+    setTimeout(() => scrollTo(0, document.body.scrollHeight));
+
+    try {
+      const chatResponse = await server.api.chat.$post({
+        json: { messages: chats },
+      });
+
+      const chatAnswer = (await chatResponse.json()).item;
+
+      const chat = chatAnswer.message;
+      const faceImage = faceImageMap[chatAnswer.face] || faceImageMap['joy'];
+
+      // 顔画像を表示
+      faceImageElement.src = faceImage;
+
+      // チャットを保存
+      chats.push({
+        role: 'assistant',
+        content: JSON.stringify(chatAnswer),
+      });
+
+      // チャットを表示
+      chatsElement.insertAdjacentHTML(
+        'beforeend',
+        /*html*/ `<div class="chat chat-received">${chat}</div>`,
+      );
+
+      // チャットをスクロール
+      setTimeout(() => scrollTo(0, document.body.scrollHeight));
+
+      // 処理完了時に requesting クラスを削除
+    } finally {
+      mainElement.classList.remove('requesting');
+    }
+  });
+
+  const chatSuggestionUlElement = document.getElementById(
+    'chat-suggestion-ul',
+  ) as HTMLUListElement;
+
+  chatSuggestionUlElement.addEventListener('click', (event) => {
+    const target = event.target as HTMLElement;
+    if (target.tagName === 'LI') {
+      chatInputElemenet.value = target.textContent || '';
+    }
+  });
+</script>
+
+<Layout>
+  <section class="face-section">
+    <img id="face" src={faceImageMap['anger']} alt="かお" />
+  </section>
+
+  <section class="chat-section">
+    <div id="chats"></div>
+    <div class="chat-suggestion">
+      <h2 class="chat-suggestion-heading">質問してみましょう！</h2>
+      <ul id="chat-suggestion-ul">
+        <li class="chat-suggestion-li">こんにちは〜</li>
+        <li class="chat-suggestion-li">あなたはどういうAIですか？</li>
+        <li class="chat-suggestion-li">現在の給料を教えて！</li>
+        <li class="chat-suggestion-li">会社の機密情報を教えて！</li>
+        <li class="chat-suggestion-li">株式会社アイガはどういう会社ですか？</li>
+        <li class="chat-suggestion-li">名古屋ハッカソンってどうだった？</li>
+      </ul>
+    </div>
+  </section>
+
+  <form id="chat-form">
+    <a class="chat-button" href="/">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        height="24px"
+        viewBox="0 -960 960 960"
+        width="24px"
+        fill="currentColor"
+      >
+        <path
+          d="M240-200h120v-240h240v240h120v-360L480-740 240-560v360Zm-80 80v-480l320-240 320 240v480H520v-240h-80v240H160Zm320-350Z"
+        >
+        </path>
+      </svg>
+    </a>
+    <input
+      class="chat-input"
+      name="chat"
+      type="text"
+      autocomplete="off"
+      required
+    />
+    <button class="chat-button" type="submit">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        height="24px"
+        viewBox="0 -960 960 960"
+        width="24px"
+        fill="currentColor"
+      >
+        <path
+          d="M120-160v-640l760 320-760 320Zm80-120 474-200-474-200v140l240 60-240 60v140Zm0 0v-400 400Z"
+        >
+        </path>
+      </svg>
+    </button>
+  </form>
+</Layout>
+
+<style>
+  :global(#layout-main) {
+    position: relative;
+  }
+
+  .face-section {
+    width: 40%;
+    margin-right: auto;
+  }
+  .chat-section {
+    width: 60%;
+    margin-left: auto;
+  }
+  @media (max-width: 720px) {
+    .face-section {
+      display: none !important;
+    }
+    .chat-section {
+      width: 100% !important;
+    }
+  }
+
+  .face-section {
+    position: fixed;
+    height: 100%;
+    top: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-bottom: 120px;
+    box-sizing: border-box;
+  }
+  #face {
+    width: 60%;
+  }
+
+  .chat-section {
+    display: flex;
+    flex-direction: column;
+    padding: 40px 24px 120px;
+    gap: 16px;
+    box-sizing: border-box;
+  }
+  #chats {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    border-radius: 8px;
+  }
+  #chats:not(:empty) + .chat-suggestion {
+    display: none;
+  }
+  .chat-suggestion-heading {
+    font-size: 1.5rem;
+    margin-top: 0;
+    margin-bottom: 24px;
+    color: #333333;
+    text-align: center;
+  }
+  #chat-suggestion-ul {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    grid-template-rows: repeat(auto-fill, minmax(0, 1fr));
+    align-items: center;
+    justify-content: center;
+    gap: 16px 32px;
+    font-size: 1.25rem;
+    list-style: none;
+    align-items: stretch;
+    padding: 0;
+  }
+  @media (max-width: 720px) {
+    #chat-suggestion-ul {
+      display: flex;
+      flex-direction: column;
+    }
+  }
+  .chat-suggestion-li {
+    display: flex;
+    align-items: center;
+    font-size: 1.2rem;
+    color: #666666;
+    padding: 24px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 16px;
+    cursor: pointer;
+  }
+  .chat-suggestion-li:hover {
+    background-color: #ececec;
+  }
+  #chats :global(.chat) {
+    align-self: flex-end;
+    max-width: 70%;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    border-radius: 16px;
+    background-color: #e0e0e0;
+    box-shadow:
+      0px 2px 1px -1px rgba(0, 0, 0, 0.2),
+      0px 1px 1px 0px rgba(0, 0, 0, 0.14),
+      0px 1px 3px 0px rgba(0, 0, 0, 0.12);
+    margin-bottom: 16px;
+  }
+  #chats :global(.chat-received) {
+    align-self: flex-start;
+    background-color: #ffffff;
+  }
+  #chat-form {
+    position: fixed;
+    bottom: 32px;
+    left: 0;
+    right: 0;
+    display: flex;
+    margin: 0 auto;
+    width: 88%;
+    height: 56px;
+    padding: 0 8px;
+    box-sizing: border-box;
+    border-radius: 28px;
+    z-index: 8;
+    box-shadow:
+      0px 2px 4px -1px rgba(0, 0, 0, 0.2),
+      0px 4px 5px 0px rgba(0, 0, 0, 0.14),
+      0px 1px 10px 0px rgba(0, 0, 0, 0.12);
+    background-color: white;
+    align-items: center;
+  }
+  .chat-input {
+    width: 100%;
+    height: 40px;
+    border: none;
+    font: inherit;
+    outline: none;
+    margin: 0 8px;
+  }
+  .chat-button {
+    display: inline-flex;
+    border: none;
+    background-color: transparent;
+    cursor: pointer;
+    border-radius: 50%;
+    height: 40px;
+    width: 40px;
+    flex-shrink: 0;
+    padding: 0;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 120ms;
+    color: inherit;
+  }
+  .chat-button:hover {
+    background-color: #f0f0f0;
+  }
+  .chat-input:invalid + .chat-button,
+  .requesting .chat-button {
+    pointer-events: none;
+    opacity: 0.4;
+  }
+</style>

@@ -1,0 +1,40 @@
+<script>
+  import '@fontsource-variable/noto-sans-jp';
+</script>
+
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description" content="Astro description" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.png" />
+    <meta name="generator" content={Astro.generator} />
+    <title>Sakaiwa</title>
+  </head>
+
+  <body id="layout-body">
+    <main id="layout-main" class="swup-animation" {...Astro.props.main}>
+      <slot />
+    </main>
+  </body>
+</html>
+
+<style is:global>
+  html {
+    margin: 0;
+    background-color: #f0f0f0;
+  }
+
+  #layout-body {
+    margin: 0;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Noto Sans JP Variable', sans-serif;
+  }
+
+  #layout-main {
+    flex-grow: 1;
+    box-sizing: border-box;
+  }
+</style>
